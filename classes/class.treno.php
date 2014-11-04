@@ -38,6 +38,9 @@ class Treno {
 
 	public $fermate;
 
+	public $lasciatoStazione;
+	public $arrivatoStazione;
+
 
 	function display() {
 

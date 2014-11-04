@@ -2,8 +2,11 @@
 
 include "classes/class.treno.php";
 
+$data = json_decode(file_get_contents('php://input'), true);
 
-$numTreno = "20754"; //752 doppio
+$numeroTreno = $data['numero'];
+
+//$numTreno = "20754"; //752 doppio
 
 $treno = new Treno;
 

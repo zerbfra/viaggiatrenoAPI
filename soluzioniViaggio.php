@@ -3,12 +3,11 @@
 include "classes/class.treno.php";
 include "classes/class.viaggio.php";
 
+$data = json_decode(file_get_contents('php://input'), true);
 
-
-$stazioneP = "11145";
-$stazioneA = "1700";
-
-$data = "2014-10-31T22:00:00";
+$stazioneP = $data['partenza'];
+$stazioneA = $data['arrivo'];
+$data = toTrenitaliaDate($data['data']);
 
 
 $soluzioni = trovaSoluzioniViaggio($stazioneP,$stazioneA,$data);

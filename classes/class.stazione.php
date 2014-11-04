@@ -36,7 +36,7 @@ class Stazione {
     $this->nome = $nome;
 
     $responseRegione = @file_get_contents("http://www.viaggiatreno.it/viaggiatrenonew/resteasy/viaggiatreno/regione/$this->id",false);
-    
+
     if($responseRegione != FALSE) {
 
       $lines = explode("\n", $responseRegione);
@@ -61,6 +61,48 @@ class Stazione {
       }
 
     }
+
+  }
+
+  function trovaTreniInPartenza($id,$timestamp) {
+
+    $data = toTrenitaliaDateTextual($timestamp);
+
+    $response = @file_get_contents("http://www.viaggiatreno.it/viaggiatrenonew/resteasy/viaggiatreno/partenze/$id/$data");
+
+    $treniPartenza = array();
+
+    if($response) {
+
+      $json = json_decode($response);
+
+      foreach ($json as $record) {
+
+        $treno = new Treno();
+        $treno->numero = $record->numeroTreno;
+        $treno->categoria = $record->categoria;
+        $treno->idOrigine = $record->codOrigine;
+        $treno->destinazione = $record->destinazione;
+        $treno->orarioPartenza = toValidTimestamp($record->orarioPartenza);
+        $treno->ritardo = $record->ritardo;
+
+        if($record->compInStazionePartenza[0] != "")
+        $treno->lasciatoStazione = true;
+        else $treno->lasciatoStazione = false;
+
+        $fermata = new Fermata();
+
+        $fermata->binarioEffettivoPartenzaDescrizione = $record->binarioEffettivoPartenzaDescrizione;
+        $fermata->binarioProgrammatoPartenzaDescrizione = str_replace(" ","",$record->binarioProgrammatoPartenzaDescrizione);
+
+        $treno->fermate  = $fermata;
+
+        array_push($treniPartenza,$treno);
+      }
+
+    }
+
+    return $treniPartenza;
 
   }
 
