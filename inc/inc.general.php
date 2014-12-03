@@ -47,13 +47,39 @@ function completeTime($previous,$time) {
 
     $tomorrow = clone $prevDate;
     $tomorrow->modify('+1 day');
-
     $next_date = new DateTime($tomorrow->format('Y-m-d') .' '.$time);
   }
   else $next_date = new DateTime($prevDate->format('Y-m-d') .' '.$time);
 
-  setTimezone($nextDate);
+  setTimezone($next_date);
   return $next_date->format('U');
+
+}
+
+// normalizza il nome di una stazione dato quello di trenitalia
+function normalizzaNome($nome) {
+
+  $nome = strtolower($nome);
+
+  $nome = str_replace("`","'",$nome);
+
+  $nome = str_replace("a'","à",$nome);
+  $nome = str_replace("e'","è",$nome);
+  $nome = str_replace("i'","ì",$nome);
+  $nome = str_replace("o'","ò",$nome);
+  $nome = str_replace("u'","ù",$nome);
+
+  $nome = ucwords($nome);
+
+  $nome = str_replace("'a","'A",$nome);
+  $nome = str_replace("'e","'E",$nome);
+  $nome = str_replace("'i","'I",$nome);
+  $nome = str_replace("'o","'O",$nome);
+  $nome = str_replace("'u","'U",$nome);
+
+  $nome = preg_replace_callback('/[.!?].*?\w/', create_function('$matches', 'return strtoupper($matches[0]);'),$nome);
+
+  return $nome;
 
 }
 

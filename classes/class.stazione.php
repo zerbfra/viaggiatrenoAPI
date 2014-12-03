@@ -75,8 +75,11 @@ class Stazione {
     if($response) {
 
       $json = json_decode($response);
-
+      $counter = 0;
       foreach ($json as $record) {
+
+        // limito a 10 prossimi treni (sennò tantissimi)
+        if($counter < 10) {
 
         $treno = new Treno();
         $treno->numero = $record->numeroTreno;
@@ -98,6 +101,8 @@ class Stazione {
         $treno->fermate  = $fermata;
 
         array_push($treniPartenza,$treno);
+        $counter++;
+        }
       }
 
     }
@@ -105,6 +110,57 @@ class Stazione {
     return $treniPartenza;
 
   }
+
+function trovaTreniInArrivo($id,$timestamp) {
+
+  $data = toTrenitaliaDateTextual($timestamp);
+
+  $response = @file_get_contents("http://www.viaggiatreno.it/viaggiatrenonew/resteasy/viaggiatreno/arrivi/$id/$data");
+
+  $treniArrivo = array();
+
+  if($response) {
+
+    $json = json_decode($response);
+
+    $counter = 0;
+
+    foreach ($json as $record) {
+
+      // limito a 10 prossimi treni (sennò tantissimi)
+      if($counter < 10) {
+
+      $treno = new Treno();
+      $treno->numero = $record->numeroTreno;
+      $treno->categoria = $record->categoria;
+      $treno->idOrigine = $record->codOrigine;
+      $treno->origine = $record->origine;
+      $treno->orarioArrivo = toValidTimestamp($record->orarioArrivo);
+      $treno->ritardo = $record->ritardo;
+
+      if($record->compInStazioneArrivo[0] != "")
+      $treno->arrivatoStazione = true;
+      else $treno->arrivatoStazione = false;
+
+      $fermata = new Fermata();
+
+      $fermata->binarioEffettivoPartenzaDescrizione = $record->binarioEffettivoPartenzaDescrizione;
+      $fermata->binarioProgrammatoPartenzaDescrizione = str_replace(" ","",$record->binarioProgrammatoPartenzaDescrizione);
+
+      $treno->fermate  = $fermata;
+
+      array_push($treniArrivo,$treno);
+      $counter++;
+      }
+
+    }
+
+  }
+
+  return $treniArrivo;
+
+}
+
 
 
 

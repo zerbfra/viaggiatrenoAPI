@@ -5,12 +5,17 @@ include "classes/class.viaggio.php";
 
 $data = json_decode(file_get_contents('php://input'), true);
 
-$stazioneP = $data['partenza']; //"5032";
-$stazioneA = $data['arrivo']; //"1700";
+if(isset($data['partenza']) && isset($data['arrivo'])) {
 
-$date = toTrenitaliaDate(round($data['data'],0));
+  $stazioneP = $data['partenza']; //"5032";
+  $stazioneA = $data['arrivo']; //"1700";
+  $date = toTrenitaliaDate(round($data['data'],0));
+  $soluzioni = trovaSoluzioniViaggio($stazioneP,$stazioneA,$date);
 
-$soluzioni = trovaSoluzioniViaggio($stazioneP,$stazioneA,$date);
+} else {
+  $numero = $data['numero']; //numero treno
+  $soluzioni = trovaTrenoDiretto($numero);
+}
 
 header('Content-Type: application/json');
 echo json_encode(array('status'=>"ok", 'response'=>$soluzioni));
@@ -25,25 +30,13 @@ function trovaSoluzioniViaggio($stazioneP,$stazioneA,$data) {
   $json = json_decode($response);
 
   $soluzioni = $json->soluzioni;
-  $viaggi = array();
+  $treni = array();
 
   foreach($soluzioni as $record) {
-      $viaggio = new Viaggio;
-      $viaggio->codOrigine = $stazioneP;
-      $viaggio->codDestinazione = $stazioneA;
 
+      if(count($record->vehicles) == 1) {
 
-      // sembra che non vengano più restituiti dal json di trenitalia!
-      $viaggio->origine = $json->origine;
-      $viaggio->destinazione = $json->destinazione;
-
-      $viaggio->durata = $record->durata;
-
-
-
-      $treniTragitto = array();
-
-      foreach($record->vehicles as $recordTreno) {
+        $recordTreno = $record->vehicles[0];
         $treno = new Treno;
 
         $treno->numero = $recordTreno->numeroTreno;
@@ -56,26 +49,37 @@ function trovaSoluzioniViaggio($stazioneP,$stazioneA,$data) {
 
         $treno->orarioArrivo = completeToTimestamp($recordTreno->orarioArrivo);
 
-
-        array_push($treniTragitto,$treno);
-
+        array_push($treni,$treno);
 
       }
 
-      $viaggio->tragitto = $treniTragitto;
-      array_push($viaggi,$viaggio);
-
-
-
   }
 
-  return $viaggi;
+  return $treni;
 
 }
 
+function trovaTrenoDiretto($numTreno) {
 
+  $treno = new Treno;
+  $treno->numero = $numTreno;
 
+  $treni = array();
 
+  $stazioniPartenza = $treno->trovaStazioniPossibili();
 
+  foreach($stazioniPartenza as $stazionePossibile) {
+    $trenoTmp = new Treno;
+    $trenoTmp->numero = $numTreno;
+    $trenoTmp->stazioneP = $stazionePossibile;
+
+    $trenoTmp->dettagliTreno();
+    $trenoTmp->trovaFermate();
+    array_push($treni,$trenoTmp);
+  }
+
+  return $treni;
+
+}
 
 ?>
